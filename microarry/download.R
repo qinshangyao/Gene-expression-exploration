@@ -39,8 +39,9 @@ bitr(anno_data$ID,fromType = "PROBEID",toType = "SYMBOL",OrgDb = "mouse430a2.db"
 ### the experiment annotation
 experiment_df <- pData(eset) %>% select(c("title","geo_accession")) 
 experiment_df %>% separate(col = "title",into = c("cell","treatment","batch"),sep = ",") %>% select(2,4) -> experiment_df
-experiment_df %>% filter(str_detect(treatment,"7")) -> experiment_df
-
+experiment_df %>% filter(! str_detect(treatment,c("LPS")) & ! str_detect(treatment,c("saline"))) -> experiment_df
+experiment_df %>% separate(col = "treatment",into = c("*","day","_","+","injury"),sep = " ") %>% select(day,injury,geo_accession) %>% 
+  dplyr::rename(GSM = geo_accession) -> experiment_df
 ##filter
 eset <- eset[,sampleNames(eset) %in% experiment_df$geo_accession]
 eset
@@ -53,7 +54,7 @@ exprs_df[1:3,1:6]
 
 tf_gene <- c("Neurog2","Ascl1","Pou3f2","Foxg1","Neurod1","Neurod2","Dlx2","Lmx1a","Mmgt1","Lhx1","Nr4a2")
 
-stem_gene <- c("Sox2","Klf4","Pax6","Nanog","Utf1","Fbxo15","Cript","Fabp7","Tnc")
+stem_gene <- c("Sox2","Klf4","Pax6","Nanog","Utf1","Fbxo15","Cript","Fabp7","Tnc","Gfap","Vim")
 
 
 dat=tibble(
@@ -64,18 +65,29 @@ dat=tibble(
 
 ## 5. plot boxplot
 
-dat <- dat %>% gather(3:8,key = "GSM",value = "Exp") %>% mutate(group = if_else(GSM %in% c("GSM866334","GSM866335","GSM866336"),"reactive","normal"))
-dat %>% group_by(gene,GSM,group) %>% summarise(Exp = median(Exp)) -> dat
+##  !! if_else too cool!!!! dat <- dat %>% gather(-c("prob","gene"),key = "GSM",value = "Exp") %>% mutate(group = if_else(GSM %in% c("GSM866334","GSM866335","GSM866336"),"reactive","normal"))
 
-dat %>%
-  ggplot(aes(x = gene,y = log2(Exp),fill = group))  + stat_summary(geom= "col",fun = mean,width = 0.65,position = position_dodge(0.65)) + 
+dat <- dat %>% gather(-c("prob","gene"),key = "GSM",value = "Exp") %>% merge.data.frame(experiment_df,by = "GSM")
+
+dat %>% group_by(gene,GSM,day,injury) %>% summarise(Exp = median(Exp)) -> dat
+
+dat %>% 
+  tidyr::unite("day_injury",day:injury) %>%
+  ggplot(aes(x = gene,y = (Exp),fill = day_injury))  + stat_summary(geom= "col",fun = mean,width = 0.65,position = position_dodge(0.65)) + 
   stat_summary(geom = "errorbar",width=0.35,fun.data  = mean_se,position = position_dodge(0.65)) +
   geom_point(size = 2,color = "grey",position = position_dodge(0.65)) + 
   ggprism::theme_prism(base_size = 16,axis_text_angle = 0) + 
-  theme(legend.position = c(0.9,0.2),axis.title.x = element_blank())+
+  theme(legend.position = c(0.9,0.1),axis.title.x = element_blank())+
   ggsci::scale_fill_d3() +
-  scale_y_continuous(expand = c(0,0),guide = guide_prism_minor()) + ylab("log2 Expresion")   + scale_x_discrete(guide = "prism_bracket")+ 
-  facet_wrap(~ gene,scales = "free",nrow = 3) + guides(fill = "none")
+  scale_y_continuous(expand = c(0,0),guide = guide_prism_minor()) + ylab(NULL)   + scale_x_discrete(guide = "prism_bracket")+ 
+  facet_wrap(~ gene,scales = "free",nrow = 3)# + guides(fill = "none")
+  
+
+
+
+
+
+
   
 
 
