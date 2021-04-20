@@ -1,4 +1,4 @@
-# Reactive_astrocyte
+# gene expression 
 ### Explore the expression of marker genes in Reactive astrocyte compared with Normal astrocyte using bioinformatics data
 
 
