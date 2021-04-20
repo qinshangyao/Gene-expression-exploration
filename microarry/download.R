@@ -58,7 +58,7 @@ stem_gene <- c("Sox2","Klf4","Pax6","Nanog","Utf1","Fbxo15","Cript","Fabp7","Tnc
 
 
 dat=tibble(
-  prob = anno_data$ID[anno_data$`Gene symbol` %in% stem_gene],
+  prob = anno_data$ID[anno_data$`Gene symbol` %in% c(tf_gene,stem_gene)],
   gene = anno_data$`Gene symbol`[anno_data$ID %in% prob],
   as_tibble(exprs_df[prob,])
 )
@@ -81,13 +81,6 @@ dat %>%
   ggsci::scale_fill_d3() +
   scale_y_continuous(expand = c(0,0),guide = guide_prism_minor()) + ylab(NULL)   + scale_x_discrete(guide = "prism_bracket")+ 
   facet_wrap(~ gene,scales = "free",nrow = 3)# + guides(fill = "none")
-  
-
-
-
-
-
-
   
 
 
